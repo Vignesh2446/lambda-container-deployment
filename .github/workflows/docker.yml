@@ -1,17 +1,18 @@
-name: Docker Build and Push
+name: Build and Push Docker Image to ECR
 
 on:
   push:
-    paths:
-      - 'app/**'
-    branches: [main]
+    branches:
+      - main  # You can change this to your deployment branch
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -20,11 +21,17 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build and Push Docker Image
+      - name: Build, tag, and push Docker image to ECR
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
         run: |
-          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest"
-          docker build -t $IMAGE_URI ./app
+          IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+          docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
+
+      - name: Output image URI
+        run: echo "Docker image pushed to ECR: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest"
