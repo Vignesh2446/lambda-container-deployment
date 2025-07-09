@@ -1,0 +1,12 @@
+# Ignore Terraform local files
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+
+# Python
+__pycache__/
+
+# Logs and env files
+*.log
+.env
